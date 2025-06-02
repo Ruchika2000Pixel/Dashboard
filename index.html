@@ -1,0 +1,2786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>American Express - Australia Market Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --amex-blue: #006fcf;
+            --amex-dark-blue: #004a8f;
+            --amex-light-blue: #e6f2ff;
+            --amex-yellow: #ffc72c;
+            --amex-gray: #f7f8fa;
+            --amex-dark-gray: #64748b;
+            --amex-text: #1e293b;
+            --amex-success: #22c55e;
+            --amex-warning: #f59e0b;
+            --amex-danger: #ef4444;
+            --amex-purple: #8b5cf6;
+            --amex-cyan: #06b6d4;
+            --amex-pink: #ec4899;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--amex-gray);
+            color: var(--amex-text);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--amex-blue) 0%, var(--amex-dark-blue) 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-logo {
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-logo span {
+            color: var(--amex-blue);
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .header-title p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .header-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .header-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .filters-bar {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .filters-left {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: var(--amex-dark-gray);
+            font-size: 0.85rem;
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: var(--radius-md);
+            background: white;
+            font-size: 0.9rem;
+            min-width: 150px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-group select:focus, .filter-group input:focus {
+            outline: none;
+            border-color: var(--amex-blue);
+            box-shadow: 0 0 0 3px rgba(0, 111, 207, 0.2);
+        }
+
+        .filters-right {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .view-toggle button {
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--amex-dark-gray);
+            transition: all 0.3s ease;
+        }
+
+        .view-toggle button.active {
+            background: var(--amex-blue);
+            color: white;
+        }
+
+        .refresh-button {
+            background: var(--amex-light-blue);
+            border: none;
+            color: var(--amex-blue);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .refresh-button:hover {
+            background: #d9e9ff;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .tab {
+            padding: 1.25rem 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--amex-dark-gray);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #f8fafc;
+            color: var(--amex-blue);
+        }
+
+        .tab.active {
+            color: var(--amex-blue);
+            border-bottom: 3px solid var(--amex-blue);
+            background: var(--amex-light-blue);
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--amex-text);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title i {
+            color: var(--amex-blue);
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .section-button {
+            background: #f1f5f9;
+            border: none;
+            color: var(--amex-dark-gray);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .section-button:hover {
+            background: #e2e8f0;
+            color: var(--amex-text);
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--amex-blue);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--amex-blue), var(--amex-purple));
+        }
+
+        .kpi-icon {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            opacity: 0.2;
+            color: var(--amex-blue);
+        }
+
+        .kpi-label {
+            font-size: 1rem;
+            color: var(--amex-dark-gray);
+            margin-bottom: 0.75rem;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--amex-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-change {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .kpi-change.positive {
+            color: var(--amex-success);
+        }
+
+        .kpi-change.negative {
+            color: var(--amex-danger);
+        }
+
+        .kpi-trend {
+            height: 40px;
+            margin-top: 1rem;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e2e8f0;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--amex-text);
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chart-action {
+            background: none;
+            border: none;
+            color: var(--amex-dark-gray);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.25rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.3s ease;
+        }
+
+        .chart-action:hover {
+            color: var(--amex-blue);
+            background: var(--amex-light-blue);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--amex-dark-gray);
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f1f5f9;
+        }
+
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 1.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--radius-md);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-active {
+            background: var(--amex-success);
+        }
+
+        .status-warning {
+            background: var(--amex-warning);
+        }
+
+        .status-inactive {
+            background: var(--amex-danger);
+        }
+
+        .insights-panel {
+            background: linear-gradient(135deg, #fff6e5 0%, #fff0db 100%);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            margin-top: 2rem;
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--amex-yellow);
+        }
+
+        .insights-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .insights-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .insight-item {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--amex-yellow);
+            transition: all 0.3s ease;
+        }
+
+        .insight-item:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .insight-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .insight-content {
+            color: #78350f;
+            font-size: 0.95rem;
+        }
+
+        .metric-highlight {
+            font-weight: 700;
+            color: #ea580c;
+        }
+
+        .advanced-metrics {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            margin-top: 2rem;
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--amex-cyan);
+        }
+
+        .advanced-metrics-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #0c4a6e;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .metric-card-title {
+            font-weight: 600;
+            color: var(--amex-dark-gray);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .metric-card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--amex-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-card-desc {
+            font-size: 0.85rem;
+            color: var(--amex-dark-gray);
+        }
+
+        .heatmap {
+            width: 100%;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        .segmentation-chart {
+            width: 100%;
+            height: 300px;
+        }
+
+        .footer {
+            background: var(--amex-dark-blue);
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            margin-top: 2rem;
+            border-radius: var(--radius-lg);
+            font-size: 0.9rem;
+        }
+
+        .footer p {
+            opacity: 0.8;
+        }
+
+        .footer a {
+            color: var(--amex-yellow);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--amex-light-blue);
+            border-top: 5px solid var(--amex-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            pointer-events: none;
+            z-index: 100;
+            max-width: 300px;
+        }
+
+        @media (max-width: 1200px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 1rem;
+            }
+
+            .filters-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filters-left, .filters-right {
+                flex-direction: column;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .insights-grid, .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tab {
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="header-logo">
+                <span>AE</span>
+            </div>
+            <div class="header-title">
+                <h1>American Express Australia</h1>
+                <p>Market Analytics Dashboard - Consumer Cards Portfolio</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="header-button">
+                <i class="fas fa-download"></i> Export
+            </button>
+            <button class="header-button">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Filters Section -->
+        <div class="filters-bar">
+            <div class="filters-left">
+                <div class="filter-group">
+                    <label for="timeRange">Time Range</label>
+                    <select id="timeRange">
+                        <option value="last30">Last 30 Days</option>
+                        <option value="last90" selected>Last 90 Days</option>
+                        <option value="last180">Last 180 Days</option>
+                        <option value="last365">Last 12 Months</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="cardType">Card Type</label>
+                    <select id="cardType">
+                        <option value="all" selected>All Cards</option>
+                        <option value="basic">Basic</option>
+                        <option value="gold">Gold</option>
+                        <option value="platinum">Platinum</option>
+                        <option value="centurion">Centurion</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="region">Region</label>
+                    <select id="region">
+                        <option value="all" selected>All Australia</option>
+                        <option value="nsw">New South Wales</option>
+                        <option value="vic">Victoria</option>
+                        <option value="qld">Queensland</option>
+                        <option value="wa">Western Australia</option>
+                        <option value="sa">South Australia</option>
+                        <option value="tas">Tasmania</option>
+                        <option value="act">ACT</option>
+                        <option value="nt">Northern Territory</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="mrStatus">MR Status</label>
+                    <select id="mrStatus">
+                        <option value="all" selected>All Members</option>
+                        <option value="enrolled">MR Enrolled</option>
+                        <option value="not-enrolled">Not Enrolled</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filters-right">
+                <div class="view-toggle">
+                    <button class="active">Dashboard</button>
+                    <button>Analytics</button>
+                    <button>Reports</button>
+                </div>
+                <button class="refresh-button">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="tabs">
+            <div class="tab active" data-tab="portfolio">
+                <i class="fas fa-chart-pie"></i> Portfolio Snapshot
+            </div>
+            <div class="tab" data-tab="engagement">
+                <i class="fas fa-users"></i> Member Engagement
+            </div>
+            <div class="tab" data-tab="spend">
+                <i class="fas fa-credit-card"></i> Spend Analysis
+            </div>
+            <div class="tab" data-tab="geographic">
+                <i class="fas fa-globe-asia"></i> Geographic Insights
+            </div>
+            <div class="tab" data-tab="advanced">
+                <i class="fas fa-chart-line"></i> Advanced Analytics
+            </div>
+        </div>
+
+        <!-- Portfolio Snapshot Tab -->
+        <div class="tab-content active" id="portfolio">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-pie"></i> Portfolio Overview
+                </h2>
+                <div class="section-actions">
+                    <button class="section-button">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button class="section-button">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <i class="fas fa-users kpi-icon"></i>
+                    <div class="kpi-label">Total Cardmembers</div>
+                    <div class="kpi-value">1.2M</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-up"></i> 5.2% vs last quarter
+                    </div>
+                    <div class="kpi-trend" id="cardmembersTrend"></div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-dollar-sign kpi-icon"></i>
+                    <div class="kpi-label">Monthly Spend Volume</div>
+                    <div class="kpi-value">AUD 2.1B</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-up"></i> 8.7% vs last month
+                    </div>
+                    <div class="kpi-trend" id="spendVolumeTrend"></div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-user-plus kpi-icon"></i>
+                    <div class="kpi-label">New Acquisitions</div>
+                    <div class="kpi-value">12.4K</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-up"></i> 3.8% vs last month
+                    </div>
+                    <div class="kpi-trend" id="acquisitionsTrend"></div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-credit-card kpi-icon"></i>
+                    <div class="kpi-label">Supplementary Card Ratio</div>
+                    <div class="kpi-value">67.4%</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-up"></i> 1.8% vs last quarter
+                    </div>
+                    <div class="kpi-trend" id="suppCardTrend"></div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Card Type Distribution</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="cardTypeChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">New Acquisitions Trend</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="acquisitionsChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">First-Year Spend Behavior</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="firstYearSpendChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Tenure Segmentation</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="tenureChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="insights-panel">
+                <div class="insights-header">
+                    <h3 class="insights-title">
+                        <i class="fas fa-lightbulb"></i> Portfolio Insights
+                    </h3>
+                </div>
+                <div class="insights-grid">
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-chart-line"></i> Growth Opportunity
+                        </div>
+                        <div class="insight-content">
+                            Platinum card acquisition is <span class="metric-highlight">12% higher</span> than forecast. Consider expanding premium card marketing in NSW and VIC.
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-user-friends"></i> Household Penetration
+                        </div>
+                        <div class="insight-content">
+                            <span class="metric-highlight">67.4% supplementary card ratio</span> indicates strong household penetration. Target remaining 33% with family card promotions.
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-hourglass-half"></i> Tenure Analysis
+                        </div>
+                        <div class="insight-content">
+                            Members with <span class="metric-highlight">2-5 years tenure</span> show highest spend growth. Focus retention efforts on this segment.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Member Engagement Tab -->
+        <div class="tab-content" id="engagement">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-users"></i> Member Engagement & Health
+                </h2>
+                <div class="section-actions">
+                    <button class="section-button">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button class="section-button">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <i class="fas fa-user-check kpi-icon"></i>
+                    <div class="kpi-label">Active vs Inactive Ratio</div>
+                    <div class="kpi-value">89.3%</div>
+                    <div class="kpi-change negative">
+                        <i class="fas fa-arrow-down"></i> 1.2% vs last month
+                    </div>
+                    <div class="kpi-trend" id="activeRatioTrend"></div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-user-minus kpi-icon"></i>
+                    <div class="kpi-label">Monthly Churn Rate</div>
+                    <div class="kpi-value">2.8%</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-down"></i> 0.5% vs last month
+                    </div>
+                    <div class="kpi-trend" id="churnRateTrend"></div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-award kpi-icon"></i>
+                    <div class="kpi-label">MR Program Enrollment</div>
+                    <div class="kpi-value">92.1%</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-up"></i> 2.3% vs last quarter
+                    </div>
+                    <div class="kpi-trend" id="mrEnrollmentTrend"></div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-receipt kpi-icon"></i>
+                    <div class="kpi-label">Annual Fee Compliance</div>
+                    <div class="kpi-value">94.7%</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-up"></i> 0.9% vs last year
+                    </div>
+                    <div class="kpi-trend" id="feeComplianceTrend"></div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Member Activity Status</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Loyalty Engagement Score</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="loyaltyEngagementChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Tenure-Linked Inactivity</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="tenureInactivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Dormant Reactivation Potential</div>
+                    <div class="chart-actions">
+                        <button class="chart-action"><i class="fas fa-expand"></i></button>
+                        <button class="chart-action"><i class="fas fa-download"></i></button>
+                        <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Segment</th>
+                                <th>Inactive Members</th>
+                                <th>Previous Avg. Spend</th>
+                                <th>Reactivation Potential</th>
+                                <th>Recommended Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>High-Value Platinum</td>
+                                <td>2,450</td>
+                                <td>AUD 4,200/month</td>
+                                <td><span class="status-indicator status-active"></span>High</td>
+                                <td>Personalized outreach with premium travel offer</td>
+                            </tr>
+                            <tr>
+                                <td>Gold 2-5 Years</td>
+                                <td>5,820</td>
+                                <td>AUD 2,800/month</td>
+                                <td><span class="status-indicator status-active"></span>High</td>
+                                <td>Dining & entertainment bonus points offer</td>
+                            </tr>
+                            <tr>
+                                <td>Basic < 1 Year</td>
+                                <td>8,340</td>
+                                <td>AUD 1,200/month</td>
+                                <td><span class="status-indicator status-warning"></span>Medium</td>
+                                <td>No annual fee + 0% interest promotion</td>
+                            </tr>
+                            <tr>
+                                <td>Gold > 5 Years</td>
+                                <td>3,120</td>
+                                <td>AUD 2,100/month</td>
+                                <td><span class="status-indicator status-warning"></span>Medium</td>
+                                <td>Loyalty recognition + bonus points</td>
+                            </tr>
+                            <tr>
+                                <td>Basic > 2 Years</td>
+                                <td>6,780</td>
+                                <td>AUD 950/month</td>
+                                <td><span class="status-indicator status-inactive"></span>Low</td>
+                                <td>Card upgrade offer with fee waiver</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="insights-panel">
+                <div class="insights-header">
+                    <h3 class="insights-title">
+                        <i class="fas fa-lightbulb"></i> Engagement Insights
+                    </h3>
+                </div>
+                <div class="insights-grid">
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-exclamation-triangle"></i> Churn Risk Alert
+                        </div>
+                        <div class="insight-content">
+                            Members with <span class="metric-highlight">< AUD 500 monthly spend</span> show 4x higher churn probability. Implement targeted retention campaigns.
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-gift"></i> Loyalty Program Performance
+                        </div>
+                        <div class="insight-content">
+                            MR enrolled members spend <span class="metric-highlight">34% more</span> than non-enrolled. Focus on increasing enrollment in WA and SA markets.
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-sync-alt"></i> Reactivation Opportunity
+                        </div>
+                        <div class="insight-content">
+                            <span class="metric-highlight">2,450 high-value inactive Platinum members</span> represent AUD 10.3M monthly spend potential. Prioritize for personalized outreach.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spend Analysis Tab -->
+        <div class="tab-content" id="spend">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-credit-card"></i> Spend Analysis
+                </h2>
+                <div class="section-actions">
+                    <button class="section-button">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button class="section-button">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <i class="fas fa-dollar-sign kpi-icon"></i>
+                    <div class="kpi-label">Total Monthly Spend</div>
+                    <div class="kpi-value">AUD 2.1B</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-up"></i> 8.7% vs last month
+                    </div>
+                    <div class="kpi-trend" id="totalSpendTrend"></div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-user-tag kpi-icon"></i>
+                    <div class="kpi-label">Avg Spend per Member</div>
+                    <div class="kpi-value">AUD 1,750</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-up"></i> 3.1% vs last month
+                    </div>
+                    <div class="kpi-trend" id="avgSpendTrend"></div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-percentage kpi-icon"></i>
+                    <div class="kpi-label">Avg Credit Utilization</div>
+                    <div class="kpi-value">32.4%</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-up"></i> 1.8% vs last quarter
+                    </div>
+                    <div class="kpi-trend" id="utilizationTrend"></div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-wallet kpi-icon"></i>
+                    <div class="kpi-label">Size of Wallet Score</div>
+                    <div class="kpi-value">68.2%</div>
+                    <div class="kpi-change positive">
+                        <i class="fas fa-arrow-up"></i> 2.5% vs last quarter
+                    </div>
+                    <div class="kpi-trend" id="walletScoreTrend"></div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Industry-wise Spend (MCC)</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="industrySpendChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Monthly Spend Trend</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="spendTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Time-of-Day/Week Spend</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <div id="timeHeatmap" class="heatmap"></div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Channel Preference</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="channelChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Credit Utilization Distribution</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="utilizationChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Co-branded Spend Contribution</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="coBrandedChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Cross-Industry Spend Behavior</div>
+                    <div class="chart-actions">
+                        <button class="chart-action"><i class="fas fa-expand"></i></button>
+                        <button class="chart-action"><i class="fas fa-download"></i></button>
+                        <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <div id="crossIndustryChart" class="chart-wrapper"></div>
+                </div>
+            </div>
+
+            <div class="insights-panel">
+                <div class="insights-header">
+                    <h3 class="insights-title">
+                        <i class="fas fa-lightbulb"></i> Spend Insights
+                    </h3>
+                </div>
+                <div class="insights-grid">
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-plane"></i> Travel Spend Recovery
+                        </div>
+                        <div class="insight-content">
+                            Travel spend has increased <span class="metric-highlight">28% YoY</span>, now at 92% of pre-pandemic levels. Opportunity for travel-focused promotions.
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-mobile-alt"></i> Digital Engagement
+                        </div>
+                        <div class="insight-content">
+                            <span class="metric-highlight">78% of transactions</span> are now contactless/digital. Mobile app engagement correlates with 23% higher monthly spend.
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-leaf"></i> Eco-conscious Spending
+                        </div>
+                        <div class="insight-content">
+                            Spend at sustainable brands up <span class="metric-highlight">42% YoY</span>, particularly strong among Platinum members under 40. Consider ESG-focused rewards.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Geographic Insights Tab -->
+        <div class="tab-content" id="geographic">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-globe-asia"></i> Geographic & Channel Insights
+                </h2>
+                <div class="section-actions">
+                    <button class="section-button">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button class="section-button">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Spend by State</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="stateSpendChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Spend Channel Preference</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="spendChannelChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Email Classification Analysis</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="emailClassChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Language Preference Breakdown</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="languageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Regional Performance Breakdown</div>
+                    <div class="chart-actions">
+                        <button class="chart-action"><i class="fas fa-expand"></i></button>
+                        <button class="chart-action"><i class="fas fa-download"></i></button>
+                        <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>State</th>
+                                <th>Members</th>
+                                <th>Avg Monthly Spend</th>
+                                <th>Growth Rate</th>
+                                <th>MR Enrollment</th>
+                                <th>Digital Engagement</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>New South Wales</td>
+                                <td>425,000</td>
+                                <td>AUD 1,890</td>
+                                <td>+6.2%</td>
+                                <td>93.4%</td>
+                                <td>High (82%)</td>
+                                <td><span class="status-indicator status-active"></span>Strong</td>
+                            </tr>
+                            <tr>
+                                <td>Victoria</td>
+                                <td>312,000</td>
+                                <td>AUD 1,720</td>
+                                <td>+4.8%</td>
+                                <td>92.1%</td>
+                                <td>High (79%)</td>
+                                <td><span class="status-indicator status-active"></span>Strong</td>
+                            </tr>
+                            <tr>
+                                <td>Queensland</td>
+                                <td>198,000</td>
+                                <td>AUD 1,650</td>
+                                <td>+7.1%</td>
+                                <td>90.8%</td>
+                                <td>Medium (72%)</td>
+                                <td><span class="status-indicator status-active"></span>Growing</td>
+                            </tr>
+                            <tr>
+                                <td>Western Australia</td>
+                                <td>156,000</td>
+                                <td>AUD 1,820</td>
+                                <td>+2.3%</td>
+                                <td>88.5%</td>
+                                <td>Medium (68%)</td>
+                                <td><span class="status-indicator status-warning"></span>Moderate</td>
+                            </tr>
+                            <tr>
+                                <td>South Australia</td>
+                                <td>89,000</td>
+                                <td>AUD 1,580</td>
+                                <td>+1.9%</td>
+                                <td>87.2%</td>
+                                <td>Medium (65%)</td>
+                                <td><span class="status-indicator status-warning"></span>Moderate</td>
+                            </tr>
+                            <tr>
+                                <td>Tasmania</td>
+                                <td>28,000</td>
+                                <td>AUD 1,490</td>
+                                <td>+3.2%</td>
+                                <td>85.6%</td>
+                                <td>Low (58%)</td>
+                                <td><span class="status-indicator status-warning"></span>Moderate</td>
+                            </tr>
+                            <tr>
+                                <td>ACT</td>
+                                <td>45,000</td>
+                                <td>AUD 2,120</td>
+                                <td>+5.8%</td>
+                                <td>94.2%</td>
+                                <td>High (84%)</td>
+                                <td><span class="status-indicator status-active"></span>Strong</td>
+                            </tr>
+                            <tr>
+                                <td>Northern Territory</td>
+                                <td>15,000</td>
+                                <td>AUD 1,680</td>
+                                <td>+2.1%</td>
+                                <td>84.8%</td>
+                                <td>Low (56%)</td>
+                                <td><span class="status-indicator status-warning"></span>Moderate</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Referral Conversion Rate</div>
+                    <div class="chart-actions">
+                        <button class="chart-action"><i class="fas fa-expand"></i></button>
+                        <button class="chart-action"><i class="fas fa-download"></i></button>
+                        <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="referralChart"></canvas>
+                </div>
+            </div>
+
+            <div class="insights-panel">
+                <div class="insights-header">
+                    <h3 class="insights-title">
+                        <i class="fas fa-lightbulb"></i> Geographic Insights
+                    </h3>
+                </div>
+                <div class="insights-grid">
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-map-marker-alt"></i> Regional Opportunity
+                        </div>
+                        <div class="insight-content">
+                            Queensland shows <span class="metric-highlight">7.1% growth</span> with strong travel spend recovery. Consider targeted Platinum card campaigns in Brisbane and Gold Coast markets.
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-language"></i> Communication Preference
+                        </div>
+                        <div class="insight-content">
+                            <span class="metric-highlight">12% of members</span> prefer non-English communications. Mandarin and Cantonese speakers show 18% higher response rates to localized campaigns.
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-envelope"></i> Email Domain Analysis
+                        </div>
+                        <div class="insight-content">
+                            Gmail users (<span class="metric-highlight">42% of base</span>) show highest digital engagement. Outlook users (28%) have highest average spend.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Analytics Tab -->
+        <div class="tab-content" id="advanced">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-line"></i> Advanced Analytics
+                </h2>
+                <div class="section-actions">
+                    <button class="section-button">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button class="section-button">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="advanced-metrics">
+                <h3 class="advanced-metrics-title">
+                    <i class="fas fa-brain"></i> Predictive Analytics & Advanced KPIs
+                </h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-card-title">Eco-conscious Spend Index</div>
+                        <div class="metric-card-value">73.2</div>
+                        <div class="metric-card-desc">Based on sustainable brand spending patterns</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-card-title">Inactive Transaction Permissions</div>
+                        <div class="metric-card-value">8.4%</div>
+                        <div class="metric-card-desc">Members with blocked contactless/PoS</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-card-title">Loyalty Program Tenure Score</div>
+                        <div class="metric-card-value">8.7/10</div>
+                        <div class="metric-card-desc">Average loyalty depth across programs</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-card-title">Cross-Industry Spend Diversity</div>
+                        <div class="metric-card-value">6.2</div>
+                        <div class="metric-card-desc">Average number of MCC categories per member</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-card-title">Aeroplan Points Engagement</div>
+                        <div class="metric-card-value">64.8%</div>
+                        <div class="metric-card-desc">Active participation in partner programs</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-card-title">Email Domain Diversity Index</div>
+                        <div class="metric-card-value">0.72</div>
+                        <div class="metric-card-desc">Distribution across email providers</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Member Segmentation Analysis</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <div id="segmentationChart" class="segmentation-chart"></div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Predictive Churn Model</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="churnPredictionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Wallet Share vs Competitor Analysis</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="walletShareChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Lifetime Value Prediction</div>
+                        <div class="chart-actions">
+                            <button class="chart-action"><i class="fas fa-expand"></i></button>
+                            <button class="chart-action"><i class="fas fa-download"></i></button>
+                            <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="lifetimeValueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Advanced Member Cohort Analysis</div>
+                    <div class="chart-actions">
+                        <button class="chart-action"><i class="fas fa-expand"></i></button>
+                        <button class="chart-action"><i class="fas fa-download"></i></button>
+                        <button class="chart-action"><i class="fas fa-info-circle"></i></button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Cohort</th>
+                                <th>Acquisition Month</th>
+                                <th>Initial Size</th>
+                                <th>Current Active</th>
+                                <th>Retention Rate</th>
+                                <th>Avg LTV</th>
+                                <th>Spend Growth</th>
+                                <th>Risk Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2024-Q1</td>
+                                <td>Jan-Mar 2024</td>
+                                <td>28,450</td>
+                                <td>26,120</td>
+                                <td>91.8%</td>
+                                <td>AUD 18,200</td>
+                                <td>+12.4%</td>
+                                <td><span class="status-indicator status-active"></span>Low</td>
+                            </tr>
+                            <tr>
+                                <td>2023-Q4</td>
+                                <td>Oct-Dec 2023</td>
+                                <td>32,180</td>
+                                <td>28,940</td>
+                                <td>89.9%</td>
+                                <td>AUD 22,800</td>
+                                <td>+8.7%</td>
+                                <td><span class="status-indicator status-active"></span>Low</td>
+                            </tr>
+                            <tr>
+                                <td>2023-Q3</td>
+                                <td>Jul-Sep 2023</td>
+                                <td>29,670</td>
+                                <td>25,420</td>
+                                <td>85.7%</td>
+                                <td>AUD 26,100</td>
+                                <td>+5.2%</td>
+                                <td><span class="status-indicator status-warning"></span>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>2023-Q2</td>
+                                <td>Apr-Jun 2023</td>
+                                <td>31,250</td>
+                                <td>24,890</td>
+                                <td>79.6%</td>
+                                <td>AUD 28,900</td>
+                                <td>+2.1%</td>
+                                <td><span class="status-indicator status-warning"></span>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>2023-Q1</td>
+                                <td>Jan-Mar 2023</td>
+                                <td>27,890</td>
+                                <td>20,340</td>
+                                <td>72.9%</td>
+                                <td>AUD 31,400</td>
+                                <td>-1.2%</td>
+                                <td><span class="status-indicator status-inactive"></span>High</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="insights-panel">
+                <div class="insights-header">
+                    <h3 class="insights-title">
+                        <i class="fas fa-lightbulb"></i> Advanced Analytics Insights
+                    </h3>
+                </div>
+                <div class="insights-grid">
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-robot"></i> AI-Powered Predictions
+                        </div>
+                        <div class="insight-content">
+                            Machine learning models predict <span class="metric-highlight">15% increase in churn</span> for members with declining MR engagement. Proactive intervention recommended.
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-chart-area"></i> Cohort Performance
+                        </div>
+                        <div class="insight-content">
+                            Q1 2024 cohort shows <span class="metric-highlight">91.8% retention</span> - highest in 2 years. Replicate acquisition strategies from this period.
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title">
+                            <i class="fas fa-balance-scale"></i> Wallet Share Opportunity
+                        </div>
+                        <div class="insight-content">
+                            Current wallet share of <span class="metric-highlight">68.2%</span> has potential to reach 75%+ through targeted cross-sell campaigns in dining and entertainment.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 American Express Australia. All rights reserved. | Data refreshed every 15 minutes | 
+        <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+    </footer>
+
+    <script>
+        // Chart.js configuration
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        Chart.defaults.color = '#64748b';
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+                
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                this.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+                
+                // Trigger chart refresh for the active tab
+                refreshChartsForTab(targetTab);
+            });
+        });
+
+        // Refresh button functionality
+        document.querySelector('.refresh-button').addEventListener('click', function() {
+            const loadingOverlay = document.querySelector('.loading-overlay');
+            loadingOverlay.classList.add('active');
+            
+            setTimeout(() => {
+                loadingOverlay.classList.remove('active');
+                // Refresh all charts
+                refreshAllCharts();
+            }, 2000);
+        });
+
+        // Chart creation functions
+        function createCardTypeChart() {
+            const ctx = document.getElementById('cardTypeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Gold', 'Platinum', 'Basic', 'Centurion'],
+                    datasets: [{
+                        data: [45, 32, 20, 3],
+                        backgroundColor: ['#fbbf24', '#8b5cf6', '#06b6d4', '#1f2937'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createAcquisitionsChart() {
+            const ctx = document.getElementById('acquisitionsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'New Members',
+                        data: [8500, 9200, 10100, 9800, 11200, 10800, 12100, 11900, 10600, 11800, 12400, 13200],
+                        borderColor: '#006fcf',
+                        backgroundColor: 'rgba(0, 111, 207, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        function createFirstYearSpendChart() {
+            const ctx = document.getElementById('firstYearSpendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Month 1', 'Month 2', 'Month 3', 'Month 6', 'Month 9', 'Month 12'],
+                    datasets: [{
+                        label: 'Average Spend (AUD)',
+                        data: [850, 1200, 1450, 1680, 1820, 1950],
+                        backgroundColor: '#22c55e',
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'AUD ' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createTenureChart() {
+            const ctx = document.getElementById('tenureChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['< 1 Year', '1-2 Years', '2-5 Years', '5-10 Years', '10+ Years'],
+                    datasets: [{
+                        label: 'Members',
+                        data: [180000, 220000, 380000, 280000, 140000],
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createActivityChart() {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Low Activity', 'Inactive'],
+                    datasets: [{
+                        data: [89.3, 7.9, 2.8],
+                        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createLoyaltyEngagementChart() {
+            const ctx = document.getElementById('loyaltyEngagementChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Points Earning', 'Redemption Rate', 'Program Tenure', 'Engagement Frequency', 'Cross-Program Usage'],
+                    datasets: [{
+                        label: 'Engagement Score',
+                        data: [85, 72, 68, 79, 63],
+                        borderColor: '#006fcf',
+                        backgroundColor: 'rgba(0, 111, 207, 0.2)',
+                        pointBackgroundColor: '#006fcf',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#006fcf'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createTenureInactivityChart() {
+            const ctx = document.getElementById('tenureInactivityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['< 1 Year', '1-2 Years', '2-5 Years', '5-10 Years', '10+ Years'],
+                    datasets: [{
+                        label: 'Inactive Rate (%)',
+                        data: [15.2, 8.7, 5.3, 7.8, 12.4],
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 20,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createIndustrySpendChart() {
+            const ctx = document.getElementById('industrySpendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Retail', 'Travel', 'Dining', 'Fuel', 'Groceries', 'Entertainment', 'Healthcare', 'Other'],
+                    datasets: [{
+                        label: 'Spend (AUD M)',
+                        data: [420, 380, 290, 180, 160, 140, 95, 85],
+                        backgroundColor: [
+                            '#06b6d4', '#8b5cf6', '#f59e0b', '#ef4444', 
+                            '#22c55e', '#ec4899', '#6366f1', '#64748b'
+                        ],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'AUD ' + value + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createSpendTrendChart() {
+            const ctx = document.getElementById('spendTrendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Total Spend (AUD B)',
+                        data: [1.8, 1.9, 2.0, 1.95, 2.1, 2.05, 2.2, 2.15, 2.0, 2.1, 2.2, 2.3],
+                        borderColor: '#006fcf',
+                        backgroundColor: 'rgba(0, 111, 207, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 1.5,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'AUD ' + value + 'B';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createChannelChart() {
+            const ctx = document.getElementById('channelChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Contactless', 'Online', 'Chip & PIN', 'Mobile Wallet', 'ATM'],
+                    datasets: [{
+                        data: [42, 28, 18, 10, 2],
+                        backgroundColor: ['#22c55e', '#06b6d4', '#8b5cf6', '#f59e0b', '#64748b'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createUtilizationChart() {
+            const ctx = document.getElementById('utilizationChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['0-10%', '11-30%', '31-50%', '51-70%', '71-90%', '90%+'],
+                    datasets: [{
+                        label: 'Members',
+                        data: [280000, 420000, 320000, 140000, 35000, 5000],
+                        backgroundColor: '#06b6d4',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createCoBrandedChart() {
+            const ctx = document.getElementById('coBrandedChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Qantas', 'Virgin', 'David Jones', 'Westfield', 'Woolworths', 'Other Partners'],
+                    datasets: [{
+                        label: 'Spend Contribution (%)',
+                        data: [28, 15, 12, 8, 6, 31],
+                        backgroundColor: '#ec4899',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createStateSpendChart() {
+            const ctx = document.getElementById('stateSpendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'],
+                    datasets: [{
+                        label: 'Monthly Spend (AUD M)',
+                        data: [803, 537, 327, 284, 141, 28, 45, 15],
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'AUD ' + value + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createSpendChannelChart() {
+            const ctx = document.getElementById('spendChannelChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Online', 'In-Store', 'Mobile App', 'Phone Orders'],
+                    datasets: [{
+                        data: [52, 38, 8, 2],
+                        backgroundColor: ['#06b6d4', '#22c55e', '#f59e0b', '#64748b'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createEmailClassChart() {
+            const ctx = document.getElementById('emailClassChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Gmail', 'Outlook', 'Yahoo', 'Corporate', 'Other'],
+                    datasets: [{
+                        data: [42, 28, 15, 12, 3],
+                        backgroundColor: ['#ef4444', '#06b6d4', '#8b5cf6', '#22c55e', '#64748b'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createLanguageChart() {
+            const ctx = document.getElementById('languageChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['English', 'Mandarin', 'Cantonese', 'Arabic', 'Italian', 'Greek', 'Other'],
+                    datasets: [{
+                        label: 'Percentage',
+                        data: [88, 4.2, 2.8, 1.5, 1.2, 0.8, 1.5],
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createReferralChart() {
+            const ctx = document.getElementById('referralChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Referral Conversion Rate (%)',
+                        data: [12.5, 13.2, 14.1, 13.8, 15.2, 14.9, 16.1, 15.7, 14.3, 15.8, 16.4, 17.2],
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 20,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createChurnPredictionChart() {
+            const ctx = document.getElementById('churnPredictionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Low Risk',
+                        data: Array.from({length: 50}, () => ({
+                            x: Math.random() * 100,
+                            y: Math.random() * 30
+                        })),
+                        backgroundColor: '#22c55e'
+                    }, {
+                        label: 'Medium Risk',
+                        data: Array.from({length: 30}, () => ({
+                            x: Math.random() * 100,
+                            y: 30 + Math.random() * 40
+                        })),
+                        backgroundColor: '#f59e0b'
+                    }, {
+                        label: 'High Risk',
+                        data: Array.from({length: 20}, () => ({
+                            x: Math.random() * 100,
+                            y: 70 + Math.random() * 30
+                        })),
+                        backgroundColor: '#ef4444'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Engagement Score'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Churn Probability (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createWalletShareChart() {
+            const ctx = document.getElementById('walletShareChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Dining', 'Travel', 'Retail', 'Groceries', 'Entertainment', 'Fuel'],
+                    datasets: [{
+                        label: 'AmEx Share',
+                        data: [72, 85, 65, 45, 68, 52],
+                        borderColor: '#006fcf',
+                        backgroundColor: 'rgba(0, 111, 207, 0.2)',
+                        pointBackgroundColor: '#006fcf'
+                    }, {
+                        label: 'Market Average',
+                        data: [58, 62, 48, 35, 52, 42],
+                        borderColor: '#64748b',
+                        backgroundColor: 'rgba(100, 116, 139, 0.1)',
+                        pointBackgroundColor: '#64748b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function createLifetimeValueChart() {
+            const ctx = document.getElementById('lifetimeValueChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Basic', 'Gold', 'Platinum', 'Centurion'],
+                    datasets: [{
+                        label: 'Predicted LTV (AUD)',
+                        data: [18500, 42800, 78200, 185000],
+                        backgroundColor: ['#06b6d4', '#fbbf24', '#8b5cf6', '#1f2937'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'AUD ' + (value / 1000) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create time-based heatmap
+        function createTimeHeatmap() {
+            const container = document.getElementById('timeHeatmap');
+            
+            // Generate sample heatmap data
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const hours = Array.from({length: 24}, (_, i) => i);
+            
+            let heatmapHTML = '<div style="display: grid; grid-template-columns: 50px repeat(24, 1fr); gap: 2px; font-size: 10px;">';
+            heatmapHTML += '<div></div>'; // Empty corner
+            
+            // Hour headers
+            hours.forEach(hour => {
+                heatmapHTML += `<div style="text-align: center; font-weight: bold;">${hour}</div>`;
+            });
+            
+            // Day rows with data
+            days.forEach(day => {
+                heatmapHTML += `<div style="font-weight: bold; display: flex; align-items: center;">${day}</div>`;
+                hours.forEach(hour => {
+                    const intensity = Math.random();
+                    const color = `rgba(0, 111, 207, ${intensity})`;
+                    heatmapHTML += `<div style="background: ${color}; height: 25px; border-radius: 2px;" title="${day} ${hour}:00 - ${(intensity * 100).toFixed(1)}% of daily spend"></div>`;
+                });
+            });
+            
+            heatmapHTML += '</div>';
+            container.innerHTML = heatmapHTML;
+        }
+
+        // Create segmentation chart using ApexCharts
+        function createSegmentationChart() {
+            const options = {
+                series: [{
+                    name: 'High Value',
+                    data: [31, 40, 28, 51, 42, 109, 100]
+                }, {
+                    name: 'Medium Value',
+                    data: [11, 32, 45, 32, 34, 52, 41]
+                }, {
+                    name: 'Low Value',
+                    data: [15, 11, 32, 18, 9, 24, 11]
+                }],
+                chart: {
+                    height: 300,
+                    type: 'area',
+                    toolbar: { show: false }
+                },
+                dataLabels: { enabled: false },
+                stroke: { curve: 'smooth' },
+                xaxis: {
+                    type: 'datetime',
+                    categories: ["2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01", "2024-05-01", "2024-06-01", "2024-07-01"]
+                },
+                colors: ['#006fcf', '#8b5cf6', '#64748b'],
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        opacityFrom: 0.6,
+                        opacityTo: 0.1,
+                    }
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            };
+
+            const chart = new ApexCharts(document.querySelector("#segmentationChart"), options);
+            chart.render();
+        }
+
+        // Create cross-industry chart
+        function createCrossIndustryChart() {
+            const container = document.getElementById('crossIndustryChart');
+            
+            // Create a simple Venn diagram representation
+            const vennHTML = `
+                <div style="position: relative; height: 300px; display: flex; justify-content: center; align-items: center;">
+                    <div style="position: absolute; width: 120px; height: 120px; border-radius: 50%; background: rgba(0, 111, 207, 0.3); border: 2px solid #006fcf; display: flex; align-items: center; justify-content: center; left: 50px; top: 50px;">
+                        <div style="text-align: center; font-size: 12px; font-weight: bold;">
+                            Retail<br>68%
+                        </div>
+                    </div>
+                    <div style="position: absolute; width: 120px; height: 120px; border-radius: 50%; background: rgba(139, 92, 246, 0.3); border: 2px solid #8b5cf6; display: flex; align-items: center; justify-content: center; left: 120px; top: 50px;">
+                        <div style="text-align: center; font-size: 12px; font-weight: bold;">
+                            Travel<br>45%
+                        </div>
+                    </div>
+                    <div style="position: absolute; width: 120px; height: 120px; border-radius: 50%; background: rgba(34, 197, 94, 0.3); border: 2px solid #22c55e; display: flex; align-items: center; justify-content: center; left: 85px; top: 120px;">
+                        <div style="text-align: center; font-size: 12px; font-weight: bold;">
+                            Dining<br>52%
+                        </div>
+                    </div>
+                    <div style="position: absolute; left: 105px; top: 90px; font-size: 10px; font-weight: bold; background: white; padding: 2px 4px; border-radius: 4px;">
+                        Multi-category<br>Users: 78%
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = vennHTML;
+        }
+
+        // Mini trend charts for KPI cards
+        function createMiniTrendChart(elementId, data, color = '#006fcf') {
+            const canvas = document.getElementById(elementId);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: data.length}, (_, i) => i),
+                    datasets: [{
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: color + '20',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    },
+                    elements: {
+                        point: { radius: 0 }
+                    }
+                }
+            });
+        }
+
+        // Initialize all charts
+        function initializeCharts() {
+            // Portfolio tab charts
+            createCardTypeChart();
+            createAcquisitionsChart();
+            createFirstYearSpendChart();
+            createTenureChart();
+            
+            // Engagement tab charts
+            createActivityChart();
+            createLoyaltyEngagementChart();
+            createTenureInactivityChart();
+            
+            // Spend tab charts
+            createIndustrySpendChart();
+            createSpendTrendChart();
+            createChannelChart();
+            createUtilizationChart();
+            createCoBrandedChart();
+            createTimeHeatmap();
+            createCrossIndustryChart();
+            
+            // Geographic tab charts
+            createStateSpendChart();
+            createSpendChannelChart();
+            createEmailClassChart();
+            createLanguageChart();
+            createReferralChart();
+            
+            // Advanced tab charts
+            createChurnPredictionChart();
+            createWalletShareChart();
+            createLifetimeValueChart();
+            createSegmentationChart();
+            
+            // Mini trend charts for KPI cards
+            createMiniTrendChart('cardmembersTrend', [100, 102, 105, 103, 108, 112, 115, 118, 120]);
+            createMiniTrendChart('spendVolumeTrend', [100, 98, 105, 110, 108, 115, 118, 122, 125]);
+            createMiniTrendChart('acquisitionsTrend', [100, 105, 102, 108, 112, 115, 118, 120, 124]);
+            createMiniTrendChart('suppCardTrend', [100, 101, 102, 103, 104, 105, 106, 107, 108]);
+        }
+
+        function refreshChartsForTab(tabName) {
+            // Refresh charts when switching tabs
+            setTimeout(() => {
+                if (tabName === 'advanced') {
+                    createSegmentationChart();
+                }
+            }, 100);
+        }
+
+        function refreshAllCharts() {
+            // Simulate data refresh
+            console.log('Refreshing all charts with latest data...');
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            
+            // Add some interactive features
+            document.querySelectorAll('.kpi-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+            
+            // Auto-refresh simulation
+            setInterval(() => {
+                const timestamp = new Date().toLocaleTimeString();
+                console.log('Dashboard auto-refreshed at:', timestamp);
+            }, 300000); // Every 5 minutes
+        });
+
+        // Filter change handlers
+        document.getElementById('timeRange').addEventListener('change', function() {
+            console.log('Time range changed to:', this.value);
+            // Simulate loading
+            document.querySelector('.loading-overlay').classList.add('active');
+            setTimeout(() => {
+                document.querySelector('.loading-overlay').classList.remove('active');
+            }, 1000);
+        });
+
+        document.getElementById('cardType').addEventListener('change', function() {
+            console.log('Card type filter changed to:', this.value);
+        });
+
+        document.getElementById('region').addEventListener('change', function() {
+            console.log('Region filter changed to:', this.value);
+        });
+
+        document.getElementById('mrStatus').addEventListener('change', function() {
+            console.log('MR status filter changed to:', this.value);
+        });
+    </script>
+</body>
+</html>
+
